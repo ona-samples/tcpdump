@@ -1,0 +1,11 @@
+{
+  "name": "tcpdump",
+  "build": {
+    "context": ".",
+    "dockerfile": "Dockerfile"
+  },
+  "privileged": true,
+  "runArgs": [
+    "--network=host"
+  ]
+}

@@ -1,0 +1,15 @@
+tasks:
+  capture-ssh-traffic:
+    name: Capture SSH traffic
+    description: Capture TCP port 22 SSH traffic on all VM host network interfaces.
+    command: |
+      set -euo pipefail
+
+      mkdir -p captures
+      capture_file="captures/ssh-$(date -u +%Y%m%dT%H%M%SZ).pcap"
+
+      echo "Capturing SSH traffic on all host interfaces into ${capture_file}"
+      echo "Stop this task to end the capture."
+      sudo tcpdump -i any -nn -s 0 -U -w "${capture_file}" "tcp port 22"
+    triggeredBy:
+      - manual
