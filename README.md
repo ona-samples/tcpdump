@@ -7,6 +7,87 @@ pcap viewing extensions.
 
 ## Usage
 
+### Network troubleshooting services
+
+The repository defines three manual Ona services that expose plain HTTP ports.
+Do not configure HTTPS in the services themselves; Ona adds HTTPS when it exposes
+ports through its reverse proxy.
+
+| Service | Port | Purpose |
+| --- | ---: | --- |
+| `http` | `8080` | Starts a cleartext HTTP/2 server that streams a UTC timestamp once per second. |
+| `websocket` | `8081` | Starts a plain HTTP WebSocket server that sends a UTC timestamp once per second. |
+| `ssh` | `8082` | Starts a plain HTTP WebSocket SSH tunnel that mirrors Ona's `ssh` tunnel headers and forwards to the VM SSH server. |
+
+Start a service with:
+
+```bash
+gitpod automations service start http
+gitpod automations service start websocket
+gitpod automations service start ssh
+```
+
+Test the HTTP/2 timestamp stream:
+
+```bash
+curl --http2-prior-knowledge http://localhost:8080/
+```
+
+Expected output is one line per second:
+
+```text
+2026-06-08T13:45:33.681453425Z HTTP/2.0
+2026-06-08T13:45:34.681544383Z HTTP/2.0
+```
+
+Test the WebSocket timestamp stream:
+
+```bash
+curl -i --http1.1 --max-time 3 \
+  -H 'Connection: Upgrade' \
+  -H 'Upgrade: websocket' \
+  -H 'Sec-WebSocket-Version: 13' \
+  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  http://localhost:8081/
+```
+
+Expected output starts with `HTTP/1.1 101 Switching Protocols`, followed by
+WebSocket frames containing timestamps.
+
+Test the SSH-over-WebSocket tunnel:
+
+```bash
+curl -i --http1.1 --max-time 3 \
+  -H 'Connection: Upgrade' \
+  -H 'Upgrade: websocket' \
+  -H 'Sec-WebSocket-Version: 13' \
+  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  -H 'Sec-WebSocket-Protocol: ssh' \
+  -H 'X-Gitpod-WebSocket-Tunnel: ssh' \
+  http://localhost:8082/
+```
+
+Expected output starts with `HTTP/1.1 101 Switching Protocols`, includes
+`Sec-WebSocket-Protocol: ssh`, and then returns the SSH server banner inside a
+WebSocket binary frame, for example `SSH-2.0-OpenSSH_...`.
+
+The SSH service forwards to `127.0.0.1:22222` by default. To test a different
+target while running the tool directly, override `ONA_SSH_TARGET_ADDR`:
+
+```bash
+ONA_SSH_TARGET_ADDR=127.0.0.1:22999 go run ./tools/network-troubleshoot --mode ssh --addr 0.0.0.0:8082
+```
+
+Open service ports through Ona when testing from outside the environment:
+
+```bash
+gitpod environment port open 8080 --name http-troubleshooting --protocol http
+gitpod environment port open 8081 --name websocket-troubleshooting --protocol http
+gitpod environment port open 8082 --name ssh-websocket-troubleshooting --protocol http
+```
+
+### SSH traffic capture
+
 Start the SSH capture service:
 
 ```bash

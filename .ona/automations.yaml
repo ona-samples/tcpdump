@@ -1,4 +1,37 @@
 services:
+  http:
+    name: HTTP/2 timestamp stream
+    description: Plain h2c HTTP server that streams a UTC timestamp every second.
+    commands:
+      start: |
+        go run ./tools/network-troubleshoot --mode http --addr 0.0.0.0:8080
+      ready: |
+        curl -sf http://localhost:8080/_health >/dev/null
+    triggeredBy:
+      - manual
+
+  websocket:
+    name: WebSocket timestamp stream
+    description: Plain HTTP WebSocket server that sends a UTC timestamp every second.
+    commands:
+      start: |
+        go run ./tools/network-troubleshoot --mode websocket --addr 0.0.0.0:8081
+      ready: |
+        curl -sf http://localhost:8081/_health >/dev/null
+    triggeredBy:
+      - manual
+
+  ssh:
+    name: SSH over WebSocket tunnel
+    description: Plain HTTP WebSocket SSH tunnel that mirrors Ona's SSH-over-WebSocket transport and forwards to the VM SSH server.
+    commands:
+      start: |
+        go run ./tools/network-troubleshoot --mode ssh --addr 0.0.0.0:8082
+      ready: |
+        curl -sf http://localhost:8082/_health >/dev/null
+    triggeredBy:
+      - manual
+
   capture-ssh-traffic:
     name: Capture SSH traffic
     description: Capture SSH traffic on all known VM host SSH endpoints.
