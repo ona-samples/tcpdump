@@ -43,16 +43,24 @@ Expected output is one line per second:
 Test the WebSocket timestamp stream:
 
 ```bash
-curl -i --http1.1 --max-time 3 \
-  -H 'Connection: Upgrade' \
-  -H 'Upgrade: websocket' \
-  -H 'Sec-WebSocket-Version: 13' \
-  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
-  http://localhost:8081/
+timeout 3 websocat ws://localhost:8081/
 ```
 
-Expected output starts with `HTTP/1.1 101 Switching Protocols`, followed by
-WebSocket frames containing timestamps.
+Or interactively with `wscat`:
+
+```bash
+wscat -c ws://localhost:8081/
+```
+
+Expected output is one decoded WebSocket message per second:
+
+```text
+2026-06-08T13:46:06.2348558Z
+2026-06-08T13:46:07.234948987Z
+```
+
+`wscat` prints the same messages with an interactive prompt and a `<` prefix.
+Press `Ctrl+C` to stop it.
 
 Test the SSH-over-WebSocket tunnel:
 
