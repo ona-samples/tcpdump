@@ -27,6 +27,24 @@ gitpod automations service start websocket
 gitpod automations service start ssh
 ```
 
+When the services start, they automatically expose their ports with
+`ona env port open`. Use the runner URLs from `ona env port list` for tests from
+outside the environment:
+
+```bash
+ona env port list
+```
+
+Choose local URLs when testing inside the environment, or runner URLs when
+testing through Ona's reverse proxy. Runner URLs use `https://` and `wss://`
+because Ona adds TLS at the proxy.
+
+| Service | Local value | Runner value |
+| --- | --- | --- |
+| HTTP | `curl --http2-prior-knowledge http://localhost:8080/` | `curl --http2 https://<8080-runner-domain>/` |
+| WebSocket | `ws://localhost:8081/` | `wss://<8081-runner-domain>/` |
+| SSH tunnel | `ws://localhost:8082/` | `wss://<8082-runner-domain>/` |
+
 Test the HTTP/2 timestamp stream:
 
 ```bash
@@ -43,13 +61,11 @@ Expected output is one line per second:
 Test the WebSocket timestamp stream:
 
 ```bash
-timeout 3 websocat ws://localhost:8081/
-```
+WEBSOCKET_URL=ws://localhost:8081/
 
-Or interactively with `wscat`:
+timeout 3 websocat "${WEBSOCKET_URL}"
 
-```bash
-wscat -c ws://localhost:8081/
+wscat -c "${WEBSOCKET_URL}"
 ```
 
 Expected output is one decoded WebSocket message per second:
@@ -72,16 +88,14 @@ curl -i --http1.1 --max-time 3 \
   -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
   -H 'Sec-WebSocket-Protocol: ssh' \
   -H 'X-Gitpod-WebSocket-Tunnel: ssh' \
-  http://localhost:8082/
+  ws://localhost:8082/
 ```
 
 Expected output starts with `HTTP/1.1 101 Switching Protocols`, includes
 `Sec-WebSocket-Protocol: ssh`, and then returns the SSH server banner inside a
 WebSocket binary frame, for example `SSH-2.0-OpenSSH_...`.
 
-Test an SSH client through the WebSocket tunnel. Use `ws://localhost:8082/` from
-inside the environment, or switch only `SSH_TUNNEL_URL` to the exposed runner
-domain URL, for example `wss://<8082-runner-domain>/`:
+Test an SSH client through the WebSocket tunnel:
 
 ```bash
 SSH_TUNNEL_URL=ws://localhost:8082/
@@ -102,8 +116,7 @@ tool directly, override `ONA_SSH_TARGET_ADDR`:
 ONA_SSH_TARGET_ADDR=127.0.0.1:22999 go run ./tools/network-troubleshoot --mode ssh --addr 0.0.0.0:8082
 ```
 
-When these services start, they automatically open their ports through Ona with
-`--protocol http`. Their stop commands close the matching exposed ports.
+The service stop commands close the matching exposed ports.
 
 ### SSH traffic capture
 
