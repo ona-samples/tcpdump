@@ -4,9 +4,17 @@ services:
     description: Plain h2c HTTP server that streams a UTC timestamp every second.
     commands:
       start: |
+        set -euo pipefail
+
+        ona env port open 8080 --name http-troubleshooting --protocol http --dont-wait
         go run ./tools/network-troubleshoot --mode http --addr 0.0.0.0:8080
       ready: |
         curl -sf http://localhost:8080/_health >/dev/null
+      stop: |
+        set -euo pipefail
+
+        ona env port close 8080 >/dev/null 2>&1 || true
+        pkill -TERM -f '[n]etwork-troubleshoot.*--mode http.*--addr 0.0.0.0:8080' 2>/dev/null || true
     triggeredBy:
       - manual
 
@@ -15,9 +23,17 @@ services:
     description: Plain HTTP WebSocket server that sends a UTC timestamp every second.
     commands:
       start: |
+        set -euo pipefail
+
+        ona env port open 8081 --name websocket-troubleshooting --protocol http --dont-wait
         go run ./tools/network-troubleshoot --mode websocket --addr 0.0.0.0:8081
       ready: |
         curl -sf http://localhost:8081/_health >/dev/null
+      stop: |
+        set -euo pipefail
+
+        ona env port close 8081 >/dev/null 2>&1 || true
+        pkill -TERM -f '[n]etwork-troubleshoot.*--mode websocket.*--addr 0.0.0.0:8081' 2>/dev/null || true
     triggeredBy:
       - manual
 
@@ -26,9 +42,17 @@ services:
     description: Plain HTTP WebSocket SSH tunnel that mirrors Ona's SSH-over-WebSocket transport and forwards to the VM SSH server.
     commands:
       start: |
+        set -euo pipefail
+
+        ona env port open 8082 --name ssh-websocket-troubleshooting --protocol http --dont-wait
         go run ./tools/network-troubleshoot --mode ssh --addr 0.0.0.0:8082
       ready: |
         curl -sf http://localhost:8082/_health >/dev/null
+      stop: |
+        set -euo pipefail
+
+        ona env port close 8082 >/dev/null 2>&1 || true
+        pkill -TERM -f '[n]etwork-troubleshoot.*--mode ssh.*--addr 0.0.0.0:8082' 2>/dev/null || true
     triggeredBy:
       - manual
 

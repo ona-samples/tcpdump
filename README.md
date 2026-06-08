@@ -86,13 +86,8 @@ target while running the tool directly, override `ONA_SSH_TARGET_ADDR`:
 ONA_SSH_TARGET_ADDR=127.0.0.1:22999 go run ./tools/network-troubleshoot --mode ssh --addr 0.0.0.0:8082
 ```
 
-Open service ports through Ona when testing from outside the environment:
-
-```bash
-gitpod environment port open 8080 --name http-troubleshooting --protocol http
-gitpod environment port open 8081 --name websocket-troubleshooting --protocol http
-gitpod environment port open 8082 --name ssh-websocket-troubleshooting --protocol http
-```
+When these services start, they automatically open their ports through Ona with
+`--protocol http`. Their stop commands close the matching exposed ports.
 
 ### SSH traffic capture
 
