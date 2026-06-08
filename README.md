@@ -44,6 +44,7 @@ because Ona adds TLS at the proxy.
 | HTTP | `curl --http2-prior-knowledge http://localhost:8080/` | `curl --http2 https://<8080-runner-domain>/` |
 | WebSocket | `ws://localhost:8081/` | `wss://<8081-runner-domain>/` |
 | SSH tunnel | `ws://localhost:8082/` | `wss://<8082-runner-domain>/` |
+| SSH tunnel for `curl` | `http://localhost:8082/` | `https://<8082-runner-domain>/` |
 
 Test the HTTP/2 timestamp stream:
 
@@ -88,7 +89,7 @@ curl -i --http1.1 --max-time 3 \
   -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
   -H 'Sec-WebSocket-Protocol: ssh' \
   -H 'X-Gitpod-WebSocket-Tunnel: ssh' \
-  ws://localhost:8082/
+  http://localhost:8082/
 ```
 
 Expected output starts with `HTTP/1.1 101 Switching Protocols`, includes
