@@ -119,24 +119,28 @@ ONA_SSH_TARGET_ADDR=127.0.0.1:22999 go run ./tools/network-troubleshoot --mode s
 
 The service stop commands close the matching exposed ports.
 
-### SSH traffic capture
+### Traffic capture
 
-Start the SSH capture service:
+Start the tcpdump capture service:
 
 ```bash
-gitpod automations service start capture-ssh-traffic
+gitpod automations service start tcpdump
 ```
 
-The service captures traffic on the known VM SSH endpoint ports:
+The service captures traffic on the known VM SSH endpoint ports and the
+troubleshooting service ports:
 
 - `22222`
 - `22999`
 - `29222`
+- `8080`
+- `8081`
+- `8082`
 
 Captures are written to timestamped files under `captures/`:
 
 ```text
-captures/ssh-YYYYMMDDTHHMMSSZ.pcap
+captures/tcpdump-YYYYMMDDTHHMMSSZ.pcap
 ```
 
 Check service status:
@@ -148,7 +152,7 @@ gitpod automations service list
 Stop the capture service:
 
 ```bash
-gitpod automations service stop capture-ssh-traffic
+gitpod automations service stop tcpdump
 ```
 
 Stopping the service sends `SIGINT` to `tcpdump`, allowing it to flush and close

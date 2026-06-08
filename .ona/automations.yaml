@@ -56,15 +56,15 @@ services:
     triggeredBy:
       - manual
 
-  capture-ssh-traffic:
-    name: Capture SSH traffic
-    description: Capture SSH traffic on all known VM host SSH endpoints.
+  tcpdump:
+    name: tcpdump
+    description: Capture traffic on all known SSH and troubleshooting service ports.
     commands:
       start: |
         set -euo pipefail
 
-        ssh_ports="22222 22999 29222"
-        tcpdump_filter="$(printf 'tcp port %s or ' ${ssh_ports})"
+        capture_ports="22222 22999 29222 8080 8081 8082"
+        tcpdump_filter="$(printf 'tcp port %s or ' ${capture_ports})"
         tcpdump_filter="${tcpdump_filter% or }"
 
         if pgrep -x tcpdump >/dev/null; then
@@ -76,15 +76,10 @@ services:
         fi
 
         mkdir -p captures
-        capture_file="captures/ssh-$(date -u +%Y%m%dT%H%M%SZ).pcap"
+        capture_file="captures/tcpdump-$(date -u +%Y%m%dT%H%M%SZ).pcap"
 
-        echo "Capturing SSH traffic on TCP ports ${ssh_ports} across all host interfaces into ${capture_file}"
+        echo "Capturing traffic on TCP ports ${capture_ports} across all host interfaces into ${capture_file}"
         echo "Stop this service to end the capture."
-
-        cleanup() {
-          sudo pkill -INT -x tcpdump 2>/dev/null || true
-        }
-        trap cleanup INT TERM EXIT
 
         sudo tcpdump -i any -nn -s 0 -U -w "${capture_file}" "${tcpdump_filter}"
       ready: |
