@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
@@ -178,7 +179,29 @@ func defaultSSHTarget() string {
 			return value
 		}
 	}
+
+	for _, target := range []string{"127.0.0.1:22222", "127.0.0.1:29222", "127.0.0.1:22999"} {
+		if speaksSSH(target) {
+			return target
+		}
+	}
+
 	return "127.0.0.1:22222"
+}
+
+func speaksSSH(target string) bool {
+	conn, err := net.DialTimeout("tcp", target, time.Second)
+	if err != nil {
+		return false
+	}
+	defer conn.Close()
+
+	_ = conn.SetReadDeadline(time.Now().Add(time.Second))
+	banner, err := bufio.NewReader(conn).ReadString('\n')
+	if err != nil {
+		return false
+	}
+	return strings.HasPrefix(banner, "SSH-")
 }
 
 func (s *server) run(ctx context.Context) error {

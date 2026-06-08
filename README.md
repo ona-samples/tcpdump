@@ -79,8 +79,24 @@ Expected output starts with `HTTP/1.1 101 Switching Protocols`, includes
 `Sec-WebSocket-Protocol: ssh`, and then returns the SSH server banner inside a
 WebSocket binary frame, for example `SSH-2.0-OpenSSH_...`.
 
-The SSH service forwards to `127.0.0.1:22222` by default. To test a different
-target while running the tool directly, override `ONA_SSH_TARGET_ADDR`:
+Test an SSH client through the WebSocket tunnel. Use `ws://localhost:8082/` from
+inside the environment, or switch only `SSH_TUNNEL_URL` to the exposed runner
+domain URL, for example `wss://<8082-runner-domain>/`:
+
+```bash
+SSH_TUNNEL_URL=ws://localhost:8082/
+
+ssh \
+  -i ~/.ssh/ona/id_ed25519 \
+  -o IdentitiesOnly=yes \
+  -o StrictHostKeyChecking=no \
+  -o "ProxyCommand=websocat -q --binary --protocol ssh -H='X-Gitpod-WebSocket-Tunnel: ssh' ${SSH_TUNNEL_URL}" \
+  gitpod_devcontainer@network-troubleshoot
+```
+
+The SSH service auto-detects the local SSH target by probing the known Ona VM
+SSH endpoints for an SSH banner. To force a different target while running the
+tool directly, override `ONA_SSH_TARGET_ADDR`:
 
 ```bash
 ONA_SSH_TARGET_ADDR=127.0.0.1:22999 go run ./tools/network-troubleshoot --mode ssh --addr 0.0.0.0:8082
