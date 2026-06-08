@@ -1,15 +1,56 @@
-tasks:
+services:
   capture-ssh-traffic:
     name: Capture SSH traffic
-    description: Capture TCP port 22 SSH traffic on all VM host network interfaces.
-    command: |
-      set -euo pipefail
+    description: Capture SSH traffic on all known VM host SSH endpoints.
+    commands:
+      start: |
+        set -euo pipefail
 
-      mkdir -p captures
-      capture_file="captures/ssh-$(date -u +%Y%m%dT%H%M%SZ).pcap"
+        ssh_ports="22222 22999 29222"
+        tcpdump_filter="$(printf 'tcp port %s or ' ${ssh_ports})"
+        tcpdump_filter="${tcpdump_filter% or }"
 
-      echo "Capturing SSH traffic on all host interfaces into ${capture_file}"
-      echo "Stop this task to end the capture."
-      sudo tcpdump -i any -nn -s 0 -U -w "${capture_file}" "tcp port 22"
+        if pgrep -x tcpdump >/dev/null; then
+          echo "tcpdump is already running."
+          while pgrep -x tcpdump >/dev/null; do
+            sleep 1
+          done
+          exit 0
+        fi
+
+        mkdir -p captures
+        capture_file="captures/ssh-$(date -u +%Y%m%dT%H%M%SZ).pcap"
+
+        echo "Capturing SSH traffic on TCP ports ${ssh_ports} across all host interfaces into ${capture_file}"
+        echo "Stop this service to end the capture."
+
+        cleanup() {
+          sudo pkill -INT -x tcpdump 2>/dev/null || true
+        }
+        trap cleanup INT TERM EXIT
+
+        sudo tcpdump -i any -nn -s 0 -U -w "${capture_file}" "${tcpdump_filter}"
+      ready: |
+        pgrep -x tcpdump >/dev/null
+      stop: |
+        set -euo pipefail
+
+        if ! pgrep -x tcpdump >/dev/null; then
+          echo "tcpdump is not running."
+          exit 0
+        fi
+
+        echo "Stopping tcpdump."
+        sudo pkill -INT -x tcpdump
+
+        for _ in $(seq 1 30); do
+          if ! pgrep -x tcpdump >/dev/null; then
+            exit 0
+          fi
+          sleep 1
+        done
+
+        echo "tcpdump did not exit after SIGINT; sending SIGTERM."
+        sudo pkill -TERM -x tcpdump 2>/dev/null || true
     triggeredBy:
       - manual

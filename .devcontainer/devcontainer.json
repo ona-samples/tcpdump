@@ -7,5 +7,13 @@
   "privileged": true,
   "runArgs": [
     "--network=host"
-  ]
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "sankooc.pcapviewer",
+        "ms-vscode.hexeditor"
+      ]
+    }
+  }
 }
